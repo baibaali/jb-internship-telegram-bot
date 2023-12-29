@@ -1,0 +1,1 @@
+rootProject.name = "xmasstree_bot"
