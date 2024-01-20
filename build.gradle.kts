@@ -32,6 +32,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
+    implementation("org.locationtech.jts:jts-core:1.19.0")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
