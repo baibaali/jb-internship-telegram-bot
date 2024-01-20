@@ -1,5 +1,7 @@
 package com.telegram.xmasstree_bot.bot
 
+import com.telegram.xmasstree_bot.exception.GeoBorderException
+import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
@@ -41,6 +43,16 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
 
     private var trees = listOf<XMassTree>()
 
+    init {
+        try {
+            cityBorder.createPolygonFromGeoJson("/static/prague.geojson")
+        } catch (e: GeoBorderException) {
+            e.printStackTrace()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     override fun getBotUsername(): String = botName
 
     /**
@@ -68,12 +80,17 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             }
         } /* If the user currently adding a new tree, then we expect a location */
         else if (update?.hasMessage() == true && update.message.hasLocation() && awaitingLocation) {
-            location = "${update.message.location.latitude},${update.message.location.longitude}"
-            sendMsg(update.message.chatId, "Location received: ${location.replace(".", "\\.")}")
-
-            if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
-                sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
-                sendMainMenu(chatId = update.message.chatId, "Choose an option:")
+            try {
+                if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
+                    sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
+                    sendMainMenu(chatId = update.message.chatId, "Choose an option:")
+                    return
+                }
+            } catch (e: InvalidArgumentException) {
+                sendInvalidLocationMessage(update.message.chatId)
+                return
+            } catch (e: GeoBorderException) {
+                sendServerError(update.message.chatId)
                 return
             }
 
@@ -99,6 +116,24 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
         else if (update?.hasCallbackQuery() == true) {
             handleCallbackQuery(update)
         }
+    }
+
+    private fun sendInvalidLocationMessage(chatId: Long) {
+        val text = "An error occurred while processing your location.\n" +
+                "Please try again and make sure that location is valid."
+        val sendMessage = SendMessage(chatId.toString(), text)
+        sendMessage.replyMarkup = createInlineKeyboardMarkupForReturn()
+
+        execute(sendMessage)
+    }
+
+    private fun sendServerError(chatId: Long) {
+        val text = "An error occurred while processing your request.\n" +
+                "Please try again later."
+        val sendMessage = SendMessage(chatId.toString(), text)
+        sendMessage.replyMarkup = createInlineKeyboardMarkupForReturn()
+
+        execute(sendMessage)
     }
 
     /**
@@ -236,6 +271,27 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
     }
 
     /**
+     * Creates an inline keyboard with one button for invalid Location item.
+     *  "Return" - to go back to the main menu
+     */
+    private fun createInlineKeyboardMarkupForReturn(): InlineKeyboardMarkup {
+        val inlineKeyboardMarkup = InlineKeyboardMarkup()
+        val keyboard = ArrayList<List<InlineKeyboardButton>>()
+
+        val row = ArrayList<InlineKeyboardButton>()
+
+        val location = InlineKeyboardButton()
+        location.text = "Return"
+        location.callbackData = "return_to_main_menu"
+        row.add(location)
+
+        keyboard.add(row)
+
+        inlineKeyboardMarkup.keyboard = keyboard
+        return inlineKeyboardMarkup
+    }
+
+    /**
      * Handles callback queries.
      *
      * @param update the update object with the callback query
@@ -276,6 +332,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
                 showTrees(chatId)
             }
             "back" -> sendMainMenu(chatId, "Choose an option:")
+            "return_to_main_menu" -> sendMainMenu(chatId, "Choose an option:")
             else -> {
                 userProgress[chatId] = newProgress
                 showTrees(chatId)

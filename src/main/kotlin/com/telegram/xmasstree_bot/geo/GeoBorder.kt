@@ -2,9 +2,12 @@ package com.telegram.xmasstree_bot.geo
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.telegram.xmasstree_bot.exception.GeoBorderException
+import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Polygon
+
 
 /**
  * Class for creating a polygon from GeoJson data and testing if a point is within the polygon.
@@ -16,21 +19,13 @@ class GeoBorder {
 
     /**
      * Creates a polygon from GeoJson data for Prague city.
+     * @throws GeoBorderException if GeoJson data is null or cannot be read.
      */
-
-    init {
-        createPolygonFromGeoJson()
-    }
-
-    fun createPolygonFromGeoJson() {
+    @Throws(GeoBorderException::class)
+    fun createPolygonFromGeoJson(filePath: String) {
         try {
-
-            val geoJsonData = this::class.java.getResource("/static/prague.geojson")?.readText(Charsets.UTF_8)
-
-            if (geoJsonData == null) {
-                println("geoJsonData is null")
-                return
-            }
+            val geoJsonData = this::class.java.getResource(filePath)?.readText(Charsets.UTF_8)
+                ?: throw GeoBorderException("GeoJson data is null")
 
             val objectMapper = ObjectMapper()
             val root = objectMapper.readTree(geoJsonData)
@@ -39,8 +34,8 @@ class GeoBorder {
             val coordinates = extractCoordinates(coordinatesNode)
             border = createPolygon(coordinates)
 
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (e: GeoBorderException) {
+            throw GeoBorderException("GeoJson data is null or cannot be read")
         }
     }
 
@@ -48,12 +43,23 @@ class GeoBorder {
      * Tests if a point is within the polygon.
      * @param latitude Latitude of the point.
      * @param longitude Longitude of the point.
+     * @throws InvalidArgumentException if latitude or longitude is not within the range.
+     * @throws GeoBorderException if polygon is not initialized.
      * @return True if the point is within the polygon, false otherwise.
      */
+    @Throws(InvalidArgumentException::class, GeoBorderException::class)
     fun testPoints(latitude: Double, longitude: Double): Boolean {
-        val point = Coordinate(longitude, latitude)
 
-        println("Point is within the polygon: ${border.contains(geometryFactory.createPoint(point))}")
+        if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
+            throw InvalidArgumentException("Latitude must be between -90 and 90, longitude between -180 and 180")
+        }
+
+        if (!this::border.isInitialized) {
+            throw GeoBorderException("Polygon is not initialized")
+        }
+
+        val point = Coordinate(longitude, latitude)
+//        println("Point is within the polygon: ${border.contains(geometryFactory.createPoint(point))}")
         return border.contains(geometryFactory.createPoint(point))
     }
 
