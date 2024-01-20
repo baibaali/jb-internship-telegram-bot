@@ -80,6 +80,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             }
         } /* If the user currently adding a new tree, then we expect a location */
         else if (update?.hasMessage() == true && update.message.hasLocation() && awaitingLocation) {
+            location = "${update.message.location.latitude},${update.message.location.longitude}"
             try {
                 if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
                     sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
@@ -156,20 +157,22 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
      */
     private fun createInlineKeyboardMarkup(): InlineKeyboardMarkup {
         val inlineKeyboardMarkup = InlineKeyboardMarkup()
-        val row = ArrayList<InlineKeyboardButton>()
+        val row1 = ArrayList<InlineKeyboardButton>()
+        val row2 = ArrayList<InlineKeyboardButton>()
 
         val button1 = InlineKeyboardButton()
         button1.text = "New Tree"
         button1.callbackData = "newTree"
-        row.add(button1)
+        row1.add(button1)
 
         val button2 = InlineKeyboardButton()
         button2.text = "Show Trees"
         button2.callbackData = "showTrees"
-        row.add(button2)
+        row2.add(button2)
 
         val keyboard = ArrayList<List<InlineKeyboardButton>>()
-        keyboard.add(row)
+        keyboard.add(row1)
+        keyboard.add(row2)
 
         inlineKeyboardMarkup.keyboard = keyboard
         return inlineKeyboardMarkup
