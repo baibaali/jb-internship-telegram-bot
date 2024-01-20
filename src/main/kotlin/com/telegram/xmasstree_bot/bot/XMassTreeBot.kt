@@ -1,5 +1,6 @@
 package com.telegram.xmasstree_bot.bot
 
+import com.telegram.xmasstree_bot.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
 import org.springframework.beans.factory.annotation.Value
@@ -30,6 +31,8 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
 
     @Value("\${telegram.botName}")
     private val botName: String = ""
+
+    private val cityBorder = GeoBorder()
 
     /* This is a map of user IDs to their progress in the bot.
      * It is used to track the user's progress when they are
@@ -69,13 +72,18 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             location = "${update.message.location.latitude},${update.message.location.longitude}"
             sendMsg(update.message.chatId, "Location received: ${location.replace(".", "\\.")}")
 
-            // Now prompt the user for an image
+            if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
+                sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
+                sendMainMenu(chatId = update.message.chatId, "Choose an option:")
+                return
+            }
+
             sendMsg(update.message.chatId, "Please send an image\\.")
             awaitingImage = true
         } /* After the user sent a location, we expect an image */
         else if (update?.hasMessage() == true && update.message.hasPhoto() && awaitingImage) {
             val photo = update.message.photo.last()  // Get the last photo (assuming it's the largest)
-            imageUrl = photo.fileId  // You may want to store the URL or download the image
+            imageUrl = photo.fileId
 
             // Save the tree entity to the database
             val tree = XMassTree(id = 0, location = location, imageUrl = imageUrl)
