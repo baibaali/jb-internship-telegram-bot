@@ -8,5 +8,4 @@ import org.springframework.stereotype.Repository
  * Repository for XMassTree entity
  */
 @Repository
-interface XMassTreeRepository : JpaRepository<XMassTree, Long> {
-}
+interface XMassTreeRepository : JpaRepository<XMassTree, Long> {}

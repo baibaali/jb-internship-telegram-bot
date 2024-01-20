@@ -23,3 +23,4 @@ data class XMassTree(
     val imageUrl: String) {
     constructor() : this(0, "", "")
 }
+
