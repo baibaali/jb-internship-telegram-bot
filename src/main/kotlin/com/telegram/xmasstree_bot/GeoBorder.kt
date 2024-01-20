@@ -17,6 +17,11 @@ class GeoBorder {
     /**
      * Creates a polygon from GeoJson data for Prague city.
      */
+
+    init {
+        createPolygonFromGeoJson()
+    }
+
     fun createPolygonFromGeoJson() {
         try {
 
@@ -46,7 +51,6 @@ class GeoBorder {
      * @return True if the point is within the polygon, false otherwise.
      */
     fun testPoints(latitude: Double, longitude: Double): Boolean {
-
         val point = Coordinate(longitude, latitude)
 
         println("Point is within the polygon: ${border.contains(geometryFactory.createPoint(point))}")
