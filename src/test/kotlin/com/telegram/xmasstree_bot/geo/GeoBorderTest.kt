@@ -1,5 +1,6 @@
-package com.telegram.xmasstree_bot
+package com.telegram.xmasstree_bot.geo
 
+import com.telegram.xmasstree_bot.geo.GeoBorder
 import org.junit.jupiter.api.Test
 
 class GeoBorderTest {

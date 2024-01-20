@@ -1,6 +1,6 @@
 package com.telegram.xmasstree_bot.bot
 
-import com.telegram.xmasstree_bot.GeoBorder
+import com.telegram.xmasstree_bot.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
 import org.springframework.beans.factory.annotation.Value
@@ -10,7 +10,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendLocation
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.objects.InputFile
-import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton

@@ -1,4 +1,4 @@
-package com.telegram.xmasstree_bot
+package com.telegram.xmasstree_bot.geo
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
