@@ -5,8 +5,8 @@ import com.telegram.xmasstree_bot.exception.GeoBorderException
 import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.XMassTree
+import com.telegram.xmasstree_bot.server.service.UpdateDispatcher
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation
@@ -30,6 +30,7 @@ import kotlin.math.*
 @Component
 class XMassTreeBot(
     private val telegramBotProperties: TelegramBotProperties,
+    private val updateDispatcher: UpdateDispatcher,
     private val service: XMassTreeService
 ): TelegramLongPollingBot(telegramBotProperties.getBotToken()) {
 
