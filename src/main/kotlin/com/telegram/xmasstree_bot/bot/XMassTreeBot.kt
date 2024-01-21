@@ -1,5 +1,6 @@
 package com.telegram.xmasstree_bot.bot
 
+import com.telegram.xmasstree_bot.config.TelegramBotProperties
 import com.telegram.xmasstree_bot.exception.GeoBorderException
 import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
@@ -27,16 +28,16 @@ import kotlin.math.*
  * It handles all the user interactions.
  */
 @Component
-class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val service: XMassTreeService): TelegramLongPollingBot(token) {
+class XMassTreeBot(
+    private val telegramBotProperties: TelegramBotProperties,
+    private val service: XMassTreeService
+): TelegramLongPollingBot(telegramBotProperties.getBotToken()) {
 
     private var awaitingLocation = false
     private var awaitingImage = false
 
     private var location = ""
     private var imageUrl = ""
-
-    @Value("\${telegram.botName}")
-    private val botName: String = ""
 
     private val cityBorder = GeoBorder()
 
@@ -58,7 +59,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
         }
     }
 
-    override fun getBotUsername(): String = botName
+    override fun getBotUsername(): String = telegramBotProperties.getBotName()
 
     /**
      * This method is handling all the user interactions.
