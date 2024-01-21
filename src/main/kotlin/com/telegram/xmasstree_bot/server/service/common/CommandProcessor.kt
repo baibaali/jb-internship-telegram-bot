@@ -5,5 +5,5 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 
 interface CommandProcessor {
-    fun process(message: Message, bot: XMassTreeBot): BotApiMethod<*>
+    fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>
 }
