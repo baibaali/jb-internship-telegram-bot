@@ -1,4 +1,4 @@
-package com.telegram.xmasstree_bot.bot.config;
+package com.telegram.xmasstree_bot.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

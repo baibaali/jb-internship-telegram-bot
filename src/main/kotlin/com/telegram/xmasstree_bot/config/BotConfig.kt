@@ -1,4 +1,4 @@
-package com.telegram.xmasstree_bot.bot.config
+package com.telegram.xmasstree_bot.config
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import org.springframework.context.annotation.Bean
