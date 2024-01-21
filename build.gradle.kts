@@ -34,6 +34,8 @@ dependencies {
 
     implementation("org.locationtech.jts:jts-core:1.19.0")
 
+    compileOnly("org.projectlombok:lombok:1.18.30")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
