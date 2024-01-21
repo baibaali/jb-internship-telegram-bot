@@ -1,7 +1,7 @@
 package com.telegram.xmasstree_bot.server.handler
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
-import org.jvnet.hk2.annotations.Service
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 
