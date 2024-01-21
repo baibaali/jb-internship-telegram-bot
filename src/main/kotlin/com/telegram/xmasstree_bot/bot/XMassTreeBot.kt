@@ -11,10 +11,15 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.InputFile
+import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import kotlin.math.*
 
 /**
@@ -74,9 +79,9 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
                 }
                 "Show Trees" -> {
                     userProgress[chatId] = 0
-                    showTrees(chatId)
+                    showTrees(chatId, update.message.messageId)
                 }
-                else -> sendMainMenu(chatId, "Sorry, I don't understand you. Please choose an option:")
+                else -> sendMainMenu(chatId, "Sorry, I don't understand you. Please select an option:")
             }
         } /* If the user currently adding a new tree, then we expect a location */
         else if (update?.hasMessage() == true && update.message.hasLocation() && awaitingLocation) {
@@ -84,7 +89,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             try {
                 if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
                     sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
-                    sendMainMenu(chatId = update.message.chatId, "Choose an option:")
+                    sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
                     return
                 }
             } catch (e: InvalidArgumentException) {
@@ -102,17 +107,24 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             val photo = update.message.photo.last()  // Get the last photo (assuming it's the largest)
             imageUrl = photo.fileId
 
+            val processingMessage = sendMsg(update.message.chatId, "Processing\\.\\.\\.")
+
             // Save the tree entity to the database
             val tree = XMassTree(id = 0, location = location, imageUrl = imageUrl)
             service.save(tree)
 
-            sendMsg(update.message.chatId, "Tree saved successfully\\!")
+            val editMessage = EditMessageText()
+            editMessage.chatId = update.message.chatId.toString()
+            editMessage.messageId = processingMessage.messageId
+            editMessage.text = "Tree saved successfully!"
+            execute(editMessage)
+//            sendMsg(update.message.chatId, "Tree saved successfully\\!")
 
             // Reset the flags
             awaitingLocation = false
             awaitingImage = false
 
-            sendMainMenu(chatId = update.message.chatId, "Choose an option:")
+            sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
         } /* If the user clicked on a button, then we expect a callback query */
         else if (update?.hasCallbackQuery() == true) {
             handleCallbackQuery(update)
@@ -143,7 +155,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
      * @param chatId The ID of the chat to send the message to
      * @param text The text of the message
      */
-    private fun sendMainMenu(chatId: Long, text: String = "Welcome! Please choose an option:") {
+    private fun sendMainMenu(chatId: Long, text: String = "Welcome! Please select an option:") {
         val sendMessage = SendMessage(chatId.toString(), text)
         sendMessage.replyMarkup = createInlineKeyboardMarkup()
 
@@ -183,24 +195,43 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
      *
      * @param chatId The ID of the chat to send the message to.
      */
-    private fun showTrees(chatId: Long) {
-        // Retrieve trees from the database
+    private fun showTrees(chatId: Long, editMessageId: Int, messageExists: Boolean = false) {
         // TODO: This should be paginated
         trees = service.findAll()
 
         if (trees.isEmpty()) {
-            val sendMessage = SendMessage(chatId.toString(), "No trees found.")
-            sendMessage.replyMarkup = createInlineKeyboardMarkup()
-            execute(sendMessage)
+            val editMessageText = EditMessageText()
+            editMessageText.chatId = chatId.toString()
+            editMessageText.messageId = editMessageId
+            editMessageText.text = "No trees found."
+            editMessageText.replyMarkup = createInlineKeyboardMarkupForReturn()
+            execute(editMessageText)
         } else {
             val tree = trees[userProgress[chatId]!!]
 
-            val sendPhoto = SendPhoto()
-            sendPhoto.chatId = chatId.toString()
-            sendPhoto.photo = InputFile(tree.imageUrl)
-            sendPhoto.replyMarkup = createInlineKeyboardMarkupForTree()
+            if (!messageExists) {
+                val sendPhoto = SendPhoto()
+                sendPhoto.chatId = chatId.toString()
+                sendPhoto.photo = InputFile(tree.imageUrl)
+                sendPhoto.replyMarkup = createInlineKeyboardMarkupForTree()
+                execute(sendPhoto)
+            } else {
+                try {
+                    val editMessageMedia = EditMessageMedia()
+                    editMessageMedia.chatId = chatId.toString()
+                    editMessageMedia.messageId = editMessageId
+                    editMessageMedia.media = InputMediaPhoto(tree.imageUrl)
+                    editMessageMedia.replyMarkup = createInlineKeyboardMarkupForTree()
+                    execute(editMessageMedia)
+                } catch (e: TelegramApiRequestException) {
+                    if (e.apiResponse.contains("message is not modified")) {
+                        // Do nothing
+                    } else {
+                        throw e
+                    }
+                }
+            }
 
-            execute(sendPhoto)
         }
     }
 
@@ -306,8 +337,8 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
 
         /* If user clicked on a button to show the next or previous tree, then we update the user progress */
         val newProgress = when (callbackQuery.data) {
-            "previous" -> maxOf(0, currentProgress - 1)
-            "next" -> minOf(trees.size - 1, currentProgress + 1)
+            "previous" -> if (currentProgress - 1 < 0) trees.size - 1 else currentProgress - 1
+            "next" -> if (currentProgress + 1 == trees.size) 0 else currentProgress + 1
             else -> currentProgress
         }
 
@@ -319,7 +350,7 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             }
             "showTrees" -> {
                 userProgress[chatId] = 0
-                showTrees(chatId)
+                showTrees(chatId, callbackQuery.message.messageId)
             }
             "location" -> {
                 val tree = trees[userProgress[chatId]!!]
@@ -332,13 +363,20 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
             }
             "location_back" -> {
                 userProgress[chatId] = newProgress
-                showTrees(chatId)
+                showTrees(chatId, callbackQuery.message.messageId)
             }
-            "back" -> sendMainMenu(chatId, "Choose an option:")
-            "return_to_main_menu" -> sendMainMenu(chatId, "Choose an option:")
+            "back" -> sendMainMenu(chatId, "Please, select an option:")
+            "return_to_main_menu" -> {
+                val editMessageText = EditMessageText()
+                editMessageText.chatId = chatId.toString()
+                editMessageText.messageId = callbackQuery.message.messageId
+                editMessageText.text = "Please, select an option:"
+                editMessageText.replyMarkup = createInlineKeyboardMarkup()
+                execute(editMessageText)
+            }
             else -> {
                 userProgress[chatId] = newProgress
-                showTrees(chatId)
+                showTrees(chatId, callbackQuery.message.messageId, true)
             }
         }
 
@@ -349,10 +387,12 @@ class XMassTreeBot(@Value("\${telegram.botToken}") token: String, private val se
      *
      * @param chatId The ID of the chat to send the message to
      * @param text The text of the message to be sent
+     * @return The message that was sent
      */
-    private fun sendMsg(chatId: Long, text: String) {
+    private fun sendMsg(chatId: Long, text: String): Message
+    {
         val sendMessage = SendMessage(chatId.toString(), text)
         sendMessage.enableMarkdownV2(true)
-        execute(sendMessage)
+        return execute(sendMessage)
     }
 }
