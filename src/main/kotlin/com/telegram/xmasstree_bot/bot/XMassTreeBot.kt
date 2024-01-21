@@ -112,7 +112,7 @@ class XMassTreeBot(
             val processingMessage = sendMsg(update.message.chatId, "Processing\\.\\.\\.")
 
             // Save the tree entity to the database
-            val tree = XMassTree(id = 0, location = location, imageUrl = imageUrl)
+            val tree = XMassTree(location = location, imageUrl = imageUrl)
             service.save(tree)
 
             val editMessage = EditMessageText()
