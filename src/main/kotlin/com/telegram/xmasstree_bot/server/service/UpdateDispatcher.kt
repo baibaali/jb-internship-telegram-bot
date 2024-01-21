@@ -14,7 +14,22 @@ class UpdateDispatcher(
     private val commandHandler: CommandHandler,
     private val callbackQueryHandler: CallbackQueryHandler
 ) {
-    fun dispatch(update: Update, bot: XMassTreeBot): BotApiMethod<*> {
-        throw NotImplementedError()
+    fun dispatch(update: Update, bot: XMassTreeBot): BotApiMethod<*>? {
+        if (update.hasMessage()) {
+            if (update.message.hasText()) {
+                if (update.message.text.startsWith("/"))
+                    return commandHandler.handle(update.message, bot)
+                return messageHandler.handle(update.message, bot)
+            }
+            else if (update.message.hasPhoto()) {
+                return messageHandler.handle(update.message, bot)
+            }
+            else if (update.message.hasLocation()) {
+                return messageHandler.handle(update.message, bot)
+            }
+        } else if (update.hasCallbackQuery()) {
+            return callbackQueryHandler.handle(update.callbackQuery, bot)
+        }
+        return null
     }
 }
