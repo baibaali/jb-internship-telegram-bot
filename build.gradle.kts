@@ -36,6 +36,8 @@ dependencies {
 
     compileOnly("org.projectlombok:lombok:1.18.30")
 
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
