@@ -21,7 +21,6 @@ import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
-import kotlin.math.*
 
 /**
  * This is the main bot class.
@@ -112,7 +111,7 @@ class XMassTreeBot(
             val processingMessage = sendMsg(update.message.chatId, "Processing\\.\\.\\.")
 
             // Save the tree entity to the database
-            val tree = XMassTree(location = location, imageUrl = imageUrl)
+            val tree = XMassTree(location = location, imageFileId = imageUrl)
             service.save(tree)
 
             val editMessage = EditMessageText()
@@ -214,7 +213,7 @@ class XMassTreeBot(
             if (!messageExists) {
                 val sendPhoto = SendPhoto()
                 sendPhoto.chatId = chatId.toString()
-                sendPhoto.photo = InputFile(tree.imageUrl)
+                sendPhoto.photo = InputFile(tree.imageFileId)
                 sendPhoto.replyMarkup = createInlineKeyboardMarkupForTree()
                 execute(sendPhoto)
             } else {
@@ -222,7 +221,7 @@ class XMassTreeBot(
                     val editMessageMedia = EditMessageMedia()
                     editMessageMedia.chatId = chatId.toString()
                     editMessageMedia.messageId = editMessageId
-                    editMessageMedia.media = InputMediaPhoto(tree.imageUrl)
+                    editMessageMedia.media = InputMediaPhoto(tree.imageFileId)
                     editMessageMedia.replyMarkup = createInlineKeyboardMarkupForTree()
                     execute(editMessageMedia)
                 } catch (e: TelegramApiRequestException) {
