@@ -1,4 +1,4 @@
-package com.telegram.xmasstree_bot.server.service
+package com.telegram.xmasstree_bot.server.service.common
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
