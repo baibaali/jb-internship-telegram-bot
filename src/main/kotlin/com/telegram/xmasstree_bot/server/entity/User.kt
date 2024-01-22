@@ -1,5 +1,6 @@
 package com.telegram.xmasstree_bot.server.entity
 
+import com.telegram.xmasstree_bot.server.entity.enums.City
 import com.telegram.xmasstree_bot.server.entity.enums.UserState
 import jakarta.persistence.*
 
@@ -11,6 +12,10 @@ data class User(
 
     @Column(name = "username")
     var username: String = "",
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "city")
+    var city: City = City.PRAGUE,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
