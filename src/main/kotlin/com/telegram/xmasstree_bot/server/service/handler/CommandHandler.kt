@@ -11,7 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Message
 class CommandHandler(
     private val userInteractionProcessor: UserInteractionProcessor
 ): AbstractHandler() {
-    override fun handle(botApiObject: BotApiObject, bot: XMassTreeBot): BotApiMethod<*> {
+    override fun handle(botApiObject: BotApiObject, bot: XMassTreeBot): BotApiMethod<*>? {
         val message = botApiObject as Message
         return userInteractionProcessor.processCommand(message, bot)
     }
