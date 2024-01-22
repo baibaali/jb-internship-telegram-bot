@@ -16,13 +16,6 @@ class CallbackQueryHandler(
 ): AbstractHandler() {
     override fun handle(botApiObject: BotApiObject, bot: XMassTreeBot): BotApiMethod<*>? {
         val callbackQuery = botApiObject as CallbackQuery
-        val user = userService.findById(callbackQuery.message.chatId)
-        if (user.isEmpty) {
-            userService.save(User(callbackQuery.message.chatId, callbackQuery.message.from.userName))
-            println("Saved")
-        } else if(user.get().banned) {
-            return null
-        }
         return userInteractionProcessor.processCallbackQuery(callbackQuery, bot)
     }
 }

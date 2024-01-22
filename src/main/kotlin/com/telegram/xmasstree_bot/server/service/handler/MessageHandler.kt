@@ -16,13 +16,6 @@ class MessageHandler(
 ): AbstractHandler() {
     override fun handle(botApiObject: BotApiObject, bot: XMassTreeBot): BotApiMethod<*>? {
         val message = botApiObject as Message
-        val user = userService.findById(message.chatId)
-        if (user.isEmpty) {
-            userService.save(User(message.chatId, message.from.userName))
-            println("Saved")
-        } else if (user.get().banned) {
-            return null
-        }
         if (message.hasLocation()) {
             return userInteractionProcessor.processLocation(message, bot)
         } else if (message.hasPhoto()) {
