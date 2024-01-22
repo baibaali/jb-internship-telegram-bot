@@ -49,10 +49,10 @@ class UserInteractionProcessor(
 
         if (callbackQuery.data.startsWith("previous")) {
             val page = callbackQuery.data.split(",")[1].toIntOrNull() ?: 0
-            return showTrees(chatId, bot, page, messageId)
+            return displayGalleryPage(chatId, bot, page, messageId)
         } else if (callbackQuery.data.startsWith("next")) {
             val page = callbackQuery.data.split(",")[1].toIntOrNull() ?: 0
-            return showTrees(chatId, bot, page, messageId)
+            return displayGalleryPage(chatId, bot, page, messageId)
         } else if (callbackQuery.data.startsWith("showLocation")) {
             val page = callbackQuery.data.split(",")[1].toIntOrNull() ?: 0
             val treeId = callbackQuery.data.split(",")[2].toLongOrNull() ?: 0
@@ -68,7 +68,7 @@ class UserInteractionProcessor(
                 changeUserState(user, UserState.LOCATION)
                 waitForLocation(chatId, messageId, bot)
             }
-            "showTrees" -> {
+            "displayGalleryPage" -> {
                 changeUserState(user, UserState.MENU)
                 openImageGallery(chatId, bot, messageId)
             }
@@ -97,13 +97,13 @@ class UserInteractionProcessor(
                 )
             }
 
-            return showTrees(chatId, bot, 0, null)
+            return displayGalleryPage(chatId, bot, 0, null)
         } catch (e: IndexOutOfBoundsException) {
             return sendOutdatedDataMessage(chatId)
         }
     }
 
-    private fun showTrees(chatId: Long, bot: XMassTreeBot, page: Int, messageId: Int? = null): BotApiMethod<*>? {
+    private fun displayGalleryPage(chatId: Long, bot: XMassTreeBot, page: Int, messageId: Int? = null): BotApiMethod<*>? {
         try {
             val treeWrapper = xMassTreeService.findAll(page, 1)
             val totalPages = treeWrapper.totalPages
@@ -175,7 +175,7 @@ class UserInteractionProcessor(
                 return sendOutdatedDataMessage(chatId)
             }
 
-            return showTrees(chatId, bot, page, null)
+            return displayGalleryPage(chatId, bot, page, null)
         } catch (e: IndexOutOfBoundsException) {
             return sendOutdatedDataMessage(chatId)
         }
@@ -195,7 +195,7 @@ class UserInteractionProcessor(
             messageId,
             "Please, select an option:",
             keyboardFactory.createInlineKeyboard(
-                listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees")
+                listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
             )
         )
     }
@@ -205,7 +205,7 @@ class UserInteractionProcessor(
             chatId,
             "Please, select an option:",
             keyboardFactory.createInlineKeyboard(
-                listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees")
+                listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
             )
         )
     }
@@ -228,7 +228,7 @@ class UserInteractionProcessor(
             message.chatId,
             "Please, select an option:",
             keyboardFactory.createInlineKeyboard(
-                listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees")
+                listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
             )
         )
     }
@@ -243,7 +243,7 @@ class UserInteractionProcessor(
                 message.chatId,
                 "Please, select an option:",
                 keyboardFactory.createInlineKeyboard(
-                    listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees")
+                    listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
                 )
             )
         }
@@ -280,7 +280,7 @@ class UserInteractionProcessor(
                 message.chatId,
                 "Please, select an option:",
                 keyboardFactory.createInlineKeyboard(
-                    listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees")
+                    listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
                 )
             )
         }
@@ -335,7 +335,7 @@ class UserInteractionProcessor(
             chatId,
             "Hello, I'm XMassTreeBot!",
             keyboardFactory.createInlineKeyboard(
-                listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("newTree", "showTrees"))
+                listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage"))
         )
     }
 
