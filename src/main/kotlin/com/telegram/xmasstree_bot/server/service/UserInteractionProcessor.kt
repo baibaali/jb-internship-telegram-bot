@@ -5,11 +5,13 @@ import com.telegram.xmasstree_bot.server.service.common.AbstractInteractionProce
 import com.telegram.xmasstree_bot.server.service.common.CallbackQueryProcessor
 import com.telegram.xmasstree_bot.server.service.common.CommandProcessor
 import com.telegram.xmasstree_bot.server.service.common.MessageProcessor
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Message
 
+@Service
 class UserInteractionProcessor:
     AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
     override fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*> {
