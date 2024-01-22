@@ -4,6 +4,7 @@ import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import com.telegram.xmasstree_bot.exception.GeoBorderException
 import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
+import com.telegram.xmasstree_bot.server.entity.User
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.service.common.AbstractInteractionProcessor
 import com.telegram.xmasstree_bot.server.service.common.CallbackQueryProcessor
@@ -21,7 +22,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 class UserInteractionProcessor(
     private val messageFactory: MessageFactory,
     private val keyboardFactory: KeyboardFactory,
-    private val xMassTreeService: XMassTreeService
+    private val xMassTreeService: XMassTreeService,
+    private val userService: UserService
 ): AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
 
     private var awaitingPhoto = false
