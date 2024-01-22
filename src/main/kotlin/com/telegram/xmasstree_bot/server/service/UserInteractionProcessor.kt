@@ -27,11 +27,10 @@ class UserInteractionProcessor(
     private val messageFactory: MessageFactory,
     private val keyboardFactory: KeyboardFactory,
     private val xMassTreeService: XMassTreeService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val redisService: RedisService
 ): AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
 
-    private var location = ""
-    private var imageFileId = ""
     private var cityBorder: GeoBorder = GeoBorder()
 
     init {
@@ -238,8 +237,17 @@ class UserInteractionProcessor(
             return returnToMenuSend(message.chatId)
         }
 
+        val location = redisService.get(message.chatId.toString())
+            ?: return messageFactory.createSendMessage(
+                message.chatId,
+                "It seems like you have been inactive for too long. Please, try again.",
+                keyboardFactory.createInlineKeyboard(
+                    listOf("Return"), listOf(1), listOf("returnEdit")
+                )
+            )
+
         val photo = message.photo.last()
-        imageFileId = photo.fileId
+        val imageFileId = photo.fileId
 
         val processingMessage = bot.execute(messageFactory.createSendMessage(
             message.chatId,
@@ -257,6 +265,8 @@ class UserInteractionProcessor(
 
         changeUserState(user, UserState.MENU)
 
+        redisService.delete(message.chatId.toString())
+
         return returnToMenuSend(message.chatId)
     }
 
@@ -269,12 +279,13 @@ class UserInteractionProcessor(
             return returnToMenuSend(message.chatId)
         }
 
-        location = "${message.location.latitude},${message.location.longitude}"
+        val location = "${message.location.latitude},${message.location.longitude}"
         try {
             if (!cityBorder.testPoints(message.location.latitude, message.location.longitude)) {
                 changeUserState(user, UserState.MENU)
                 return sendLocationOutOfBorderMessage(message.chatId)
             }
+            redisService.set(user.id.toString(), location)
         } catch (e: InvalidArgumentException) {
             changeUserState(user, UserState.MENU)
             return sendLocationErrorMessage(message.chatId)
