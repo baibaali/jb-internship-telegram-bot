@@ -2,13 +2,13 @@ package com.telegram.xmasstree_bot.bot
 
 import com.telegram.xmasstree_bot.config.TelegramBotProperties
 import com.telegram.xmasstree_bot.exception.GeoBorderException
-import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.service.UpdateDispatcher
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.bots.TelegramLongPollingBot
+import org.telegram.telegrambots.bots.TelegramWebhookBot
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
@@ -31,7 +31,7 @@ class XMassTreeBot(
     private val telegramBotProperties: TelegramBotProperties,
     private val updateDispatcher: UpdateDispatcher,
     private val service: XMassTreeService
-): TelegramLongPollingBot(telegramBotProperties.getBotToken()) {
+): TelegramWebhookBot(telegramBotProperties.getBotToken()) {
 
     private var awaitingLocation = false
     private var awaitingImage = false
@@ -60,77 +60,84 @@ class XMassTreeBot(
     }
 
     override fun getBotUsername(): String = telegramBotProperties.getBotName()
-
-    /**
-     * This method is handling all the user interactions.
-     * It is called every time the user sends a message to the bot.
-     *
-     * @param update The update object containing the user's message
-     */
-    override fun onUpdateReceived(update: Update?) {
-        if (update?.hasMessage() == true && update.message.hasText()) {
-            val message = update.message
-            val chatId = message.chatId
-
-            when (message.text) {
-                "/start" -> sendMainMenu(chatId)
-                "New Tree" -> {
-                    sendMsg(chatId, "Please send me location of your tree")
-                    awaitingLocation = true
-                }
-                "Show Trees" -> {
-                    userProgress[chatId] = 0
-                    showTrees(chatId, update.message.messageId)
-                }
-                else -> sendMainMenu(chatId, "Sorry, I don't understand you. Please select an option:")
-            }
-        } /* If the user currently adding a new tree, then we expect a location */
-        else if (update?.hasMessage() == true && update.message.hasLocation() && awaitingLocation) {
-            location = "${update.message.location.latitude},${update.message.location.longitude}"
-            try {
-                if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
-                    sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
-                    sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
-                    return
-                }
-            } catch (e: InvalidArgumentException) {
-                sendInvalidLocationMessage(update.message.chatId)
-                return
-            } catch (e: GeoBorderException) {
-                sendServerError(update.message.chatId)
-                return
-            }
-
-            sendMsg(update.message.chatId, "Please send an image\\.")
-            awaitingImage = true
-        } /* After the user sent a location, we expect an image */
-        else if (update?.hasMessage() == true && update.message.hasPhoto() && awaitingImage) {
-            val photo = update.message.photo.last()  // Get the last photo (assuming it's the largest)
-            imageUrl = photo.fileId
-
-            val processingMessage = sendMsg(update.message.chatId, "Processing\\.\\.\\.")
-
-            // Save the tree entity to the database
-            val tree = XMassTree(location = location, imageFileId = imageUrl)
-            service.save(tree)
-
-            val editMessage = EditMessageText()
-            editMessage.chatId = update.message.chatId.toString()
-            editMessage.messageId = processingMessage.messageId
-            editMessage.text = "Tree saved successfully!"
-            execute(editMessage)
-//            sendMsg(update.message.chatId, "Tree saved successfully\\!")
-
-            // Reset the flags
-            awaitingLocation = false
-            awaitingImage = false
-
-            sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
-        } /* If the user clicked on a button, then we expect a callback query */
-        else if (update?.hasCallbackQuery() == true) {
-            handleCallbackQuery(update)
-        }
+    override fun onWebhookUpdateReceived(update: Update): BotApiMethod<*>? {
+        return updateDispatcher.dispatch(update, this)
     }
+
+    override fun getBotPath(): String {
+        return telegramBotProperties.getWebHookUrl()
+    }
+
+//    /**
+//     * This method is handling all the user interactions.
+//     * It is called every time the user sends a message to the bot.
+//     *
+//     * @param update The update object containing the user's message
+//     */
+//    override fun onUpdateReceived(update: Update?) {
+//        if (update?.hasMessage() == true && update.message.hasText()) {
+//            val message = update.message
+//            val chatId = message.chatId
+//
+//            when (message.text) {
+//                "/start" -> sendMainMenu(chatId)
+//                "New Tree" -> {
+//                    sendMsg(chatId, "Please send me location of your tree")
+//                    awaitingLocation = true
+//                }
+//                "Show Trees" -> {
+//                    userProgress[chatId] = 0
+//                    showTrees(chatId, update.message.messageId)
+//                }
+//                else -> sendMainMenu(chatId, "Sorry, I don't understand you. Please select an option:")
+//            }
+//        } /* If the user currently adding a new tree, then we expect a location */
+//        else if (update?.hasMessage() == true && update.message.hasLocation() && awaitingLocation) {
+//            location = "${update.message.location.latitude},${update.message.location.longitude}"
+//            try {
+//                if (!cityBorder.testPoints(update.message.location.latitude, update.message.location.longitude)) {
+//                    sendMsg(update.message.chatId, "Sorry, the location must be within the Prague city\\.")
+//                    sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
+//                    return
+//                }
+//            } catch (e: InvalidArgumentException) {
+//                sendInvalidLocationMessage(update.message.chatId)
+//                return
+//            } catch (e: GeoBorderException) {
+//                sendServerError(update.message.chatId)
+//                return
+//            }
+//
+//            sendMsg(update.message.chatId, "Please send an image\\.")
+//            awaitingImage = true
+//        } /* After the user sent a location, we expect an image */
+//        else if (update?.hasMessage() == true && update.message.hasPhoto() && awaitingImage) {
+//            val photo = update.message.photo.last()  // Get the last photo (assuming it's the largest)
+//            imageUrl = photo.fileId
+//
+//            val processingMessage = sendMsg(update.message.chatId, "Processing\\.\\.\\.")
+//
+//            // Save the tree entity to the database
+//            val tree = XMassTree(location = location, imageFileId = imageUrl)
+//            service.save(tree)
+//
+//            val editMessage = EditMessageText()
+//            editMessage.chatId = update.message.chatId.toString()
+//            editMessage.messageId = processingMessage.messageId
+//            editMessage.text = "Tree saved successfully!"
+//            execute(editMessage)
+////            sendMsg(update.message.chatId, "Tree saved successfully\\!")
+//
+//            // Reset the flags
+//            awaitingLocation = false
+//            awaitingImage = false
+//
+//            sendMainMenu(chatId = update.message.chatId, "Please, select an option:")
+//        } /* If the user clicked on a button, then we expect a callback query */
+//        else if (update?.hasCallbackQuery() == true) {
+//            handleCallbackQuery(update)
+//        }
+//    }
 
     private fun sendInvalidLocationMessage(chatId: Long) {
         val text = "An error occurred while processing your location.\n" +
