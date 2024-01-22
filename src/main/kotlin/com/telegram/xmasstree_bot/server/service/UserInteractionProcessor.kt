@@ -15,8 +15,11 @@ import com.telegram.xmasstree_bot.server.service.factory.KeyboardFactory
 import com.telegram.xmasstree_bot.server.service.factory.MessageFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 
 @Service
@@ -66,7 +69,7 @@ class UserInteractionProcessor(
         return when (callbackQuery.data) {
             "newTree" -> {
                 changeUserState(user, UserState.LOCATION)
-                waitForLocation(chatId, messageId, bot)
+                waitForLocation(chatId, messageId)
             }
             "displayGalleryPage" -> {
                 changeUserState(user, UserState.MENU)
@@ -108,42 +111,22 @@ class UserInteractionProcessor(
             val treeWrapper = xMassTreeService.findAll(page, 1)
             val totalPages = treeWrapper.totalPages
 
-            val previousPage = if (page - 1 < 0) totalPages - 1 else page - 1
-            val nextPage = if (page + 1 >= totalPages) 0 else page + 1
-
             val tree = treeWrapper.content[0]
-            val currentPage = (page + 1).toString() + "/" + totalPages.toString()
 
             if (messageId == null) {
-                bot.execute(messageFactory.createSendPhoto(
-                    chatId,
-                    tree.imageFileId,
-                    keyboardFactory.createInlineKeyboard(
-                        listOf("Show Location", "<", currentPage, ">", "Return"),
-                        listOf(1, 3, 1),
-                        listOf("showLocation,$page,${tree.id}", "previous,$previousPage", "dummy", "next,$nextPage", "returnSend"))
-                ))
-                return null
+                bot.execute(displayPageMessageSend(chatId, tree, totalPages, page))
             } else {
                 try {
-                    bot.execute(messageFactory.createEditMessageMedia(
-                        chatId,
-                        messageId,
-                        tree.imageFileId,
-                        keyboardFactory.createInlineKeyboard(
-                            listOf("Show Location", "<", currentPage, ">", "Return"),
-                            listOf(1, 3, 1),
-                            listOf("showLocation,$page,${tree.id}", "previous,$previousPage", "dummy", "next,$nextPage", "returnSend"))
-                    ))
-                    return null
+                    bot.execute(displayPageMessageEdit(chatId, messageId, tree, totalPages, page))
                 } catch (e: TelegramApiRequestException) {
-                    if (e.apiResponse.contains("message is not modified")) {
-                        return null
-                    } else {
+                    /* If message contains this string, it means we tried to modify message with the same data */
+                    /* We should ignore that, to allow user to click on the next/prev buttons, when there is only 1 page */
+                    if (!e.apiResponse.contains("message is not modified"))
                         throw e
-                    }
                 }
             }
+
+            return null
         } catch (e: IndexOutOfBoundsException) {
             return sendOutdatedDataMessage(chatId)
         }
@@ -181,14 +164,6 @@ class UserInteractionProcessor(
         }
     }
 
-    private fun waitForLocation(chatId: Long, messageId: Int, bot: XMassTreeBot): BotApiMethod<*>? {
-        return messageFactory.createEditMessageText(
-            chatId,
-            messageId,
-            "Please send me a location of your tree",
-            keyboardFactory.createInlineKeyboard(listOf("Return"), listOf(1), listOf("returnEdit")))
-    }
-
     private fun returnToMenuEdit(chatId: Long, messageId: Int): BotApiMethod<*>? {
         return messageFactory.createEditMessageText(
             chatId,
@@ -210,6 +185,35 @@ class UserInteractionProcessor(
         )
     }
 
+    private fun displayPageMessageEdit(chatId: Long, messageId: Int, tree: XMassTree, totalPages: Int, page: Int):
+            EditMessageMedia? {
+        return messageFactory.createEditMessageMedia(
+            chatId,
+            messageId,
+            tree.imageFileId,
+            createInlineKeyboardForGalleryPage(page, totalPages, tree.id)
+        )
+    }
+
+    private fun displayPageMessageSend(chatId: Long, tree: XMassTree, totalPages: Int, page: Int): SendPhoto? {
+        return messageFactory.createSendPhoto(
+            chatId,
+            tree.imageFileId,
+            createInlineKeyboardForGalleryPage(page, totalPages, tree.id)
+        )
+    }
+
+    private fun createInlineKeyboardForGalleryPage(page: Int, totalPages: Int, treeId: Long): InlineKeyboardMarkup? {
+        val previousPage = if (page - 1 < 0) totalPages - 1 else page - 1
+        val nextPage = if (page + 1 >= totalPages) 0 else page + 1
+
+        return keyboardFactory.createInlineKeyboard(
+            listOf("Show Location", "<", "${page + 1}/$totalPages", ">", "Return"),
+            listOf(1, 3, 1),
+            listOf("showLocation,$page,$treeId", "previous,$previousPage", "dummy", "next,$nextPage", "returnSend")
+        )
+    }
+
     override fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = getUser(message.from)
         changeUserState(user, UserState.MENU)
@@ -223,14 +227,7 @@ class UserInteractionProcessor(
     override fun processText(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = getUser(message.from)
         changeUserState(user, UserState.MENU)
-
-        return messageFactory.createSendMessage(
-            message.chatId,
-            "Please, select an option:",
-            keyboardFactory.createInlineKeyboard(
-                listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
-            )
-        )
+        return returnToMenuSend(message.chatId)
     }
 
     override fun processPhoto(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
@@ -238,14 +235,7 @@ class UserInteractionProcessor(
 
         if (user.state != UserState.IMAGE) {
             changeUserState(user, UserState.MENU)
-
-            return messageFactory.createSendMessage(
-                message.chatId,
-                "Please, select an option:",
-                keyboardFactory.createInlineKeyboard(
-                    listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
-                )
-            )
+            return returnToMenuSend(message.chatId)
         }
 
         val photo = message.photo.last()
@@ -276,53 +266,39 @@ class UserInteractionProcessor(
 
         if (user.state != UserState.LOCATION) {
             changeUserState(user, UserState.MENU)
-            return messageFactory.createSendMessage(
-                message.chatId,
-                "Please, select an option:",
-                keyboardFactory.createInlineKeyboard(
-                    listOf("New Tree", "Open Gallery"), listOf(1, 1), listOf("newTree", "displayGalleryPage")
-                )
-            )
+            return returnToMenuSend(message.chatId)
         }
 
         location = "${message.location.latitude},${message.location.longitude}"
         try {
             if (!cityBorder.testPoints(message.location.latitude, message.location.longitude)) {
                 changeUserState(user, UserState.MENU)
-                return messageFactory.createSendMessage(
-                    message.chatId,
-                    "Sorry, the location must be within the Prague city.",
-                    keyboardFactory.createInlineKeyboard(
-                        listOf("Return"), listOf(1), listOf("returnEdit")
-                    )
-                )
+                return sendLocationOutOfBorderMessage(message.chatId)
             }
         } catch (e: InvalidArgumentException) {
             changeUserState(user, UserState.MENU)
-            return messageFactory.createSendMessage(
-                message.chatId,
-                "An error occurred while processing your location.\n" +
-                        "Please try again and make sure that location is valid.",
-                keyboardFactory.createInlineKeyboard(
-                    listOf("Return"), listOf(1), listOf("returnEdit")
-                )
-            )
+            return sendLocationErrorMessage(message.chatId)
         } catch (e: GeoBorderException) {
             e.printStackTrace()
             changeUserState(user, UserState.MENU)
-            return messageFactory.createSendMessage(
-                message.chatId,
-                "An error occurred while processing your request.\n" +
-                        "Please try again later.",
-                keyboardFactory.createInlineKeyboard(
-                    listOf("Return"), listOf(1), listOf("returnEdit")
-                )
-            )
+            return sendInternalErrorMessage(message.chatId)
         }
 
         changeUserState(user, UserState.IMAGE)
+        return waitForImage(message.chatId)
+    }
+
+    private fun waitForLocation(chatId: Long, messageId: Int): BotApiMethod<*>? {
+        return messageFactory.createEditMessageText(
+            chatId,
+            messageId,
+            "Please send me a location of your tree",
+            keyboardFactory.createInlineKeyboard(listOf("Return"), listOf(1), listOf("returnEdit")))
+    }
+
+    private fun waitForImage(chatId: Long): BotApiMethod<*>? {
         return messageFactory.createSendMessage(
-            message.chatId,
+            chatId,
             "Please, send me a photo of your tree",
             keyboardFactory.createInlineKeyboard(
                 listOf("Return"), listOf(1), listOf("returnEdit")
@@ -355,6 +331,38 @@ class UserInteractionProcessor(
                     "Please, reload the gallery.",
             keyboardFactory.createInlineKeyboard(
                 listOf("Return"), listOf(1), listOf("returnEdit"))
+        )
+    }
+
+    private fun sendLocationErrorMessage(chatId: Long): BotApiMethod<*> {
+        return messageFactory.createSendMessage(
+            chatId,
+            "An error occurred while processing your location.\n" +
+                    "Please try again and make sure that location is valid.",
+            keyboardFactory.createInlineKeyboard(
+                listOf("Return"), listOf(1), listOf("returnEdit")
+            )
+        )
+    }
+
+    private fun sendInternalErrorMessage(chatId: Long): BotApiMethod<*> {
+        return messageFactory.createSendMessage(
+            chatId,
+            "An error occurred while processing your request.\n" +
+                    "Please try again later.",
+            keyboardFactory.createInlineKeyboard(
+                listOf("Return"), listOf(1), listOf("returnEdit")
+            )
+        )
+    }
+
+    private fun sendLocationOutOfBorderMessage(chatId: Long): BotApiMethod<*> {
+        return messageFactory.createSendMessage(
+            chatId,
+            "Sorry, the location must be within the Prague city.",
+            keyboardFactory.createInlineKeyboard(
+                listOf("Return"), listOf(1), listOf("returnEdit")
+            )
         )
     }
 
