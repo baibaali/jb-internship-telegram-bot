@@ -7,5 +7,5 @@ import jakarta.persistence.*
 abstract class AbstractEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    protected val id: Long = 0L
+    val id: Long = 0L
 }
