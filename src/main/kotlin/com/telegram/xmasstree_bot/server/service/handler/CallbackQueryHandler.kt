@@ -1,4 +1,4 @@
-package com.telegram.xmasstree_bot.server.handler
+package com.telegram.xmasstree_bot.server.service.handler
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import org.springframework.stereotype.Service
