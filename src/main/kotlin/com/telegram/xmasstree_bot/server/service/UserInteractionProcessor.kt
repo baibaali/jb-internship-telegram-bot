@@ -5,6 +5,9 @@ import com.telegram.xmasstree_bot.server.service.common.AbstractInteractionProce
 import com.telegram.xmasstree_bot.server.service.common.CallbackQueryProcessor
 import com.telegram.xmasstree_bot.server.service.common.CommandProcessor
 import com.telegram.xmasstree_bot.server.service.common.MessageProcessor
+import com.telegram.xmasstree_bot.server.service.factory.KeyboardFactory
+import com.telegram.xmasstree_bot.server.service.factory.MessageFactory
+import org.apache.logging.log4j.message.AbstractMessageFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -12,8 +15,10 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Message
 
 @Service
-class UserInteractionProcessor:
-    AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
+class UserInteractionProcessor(
+    private val messageFactory: MessageFactory,
+    private val keyboardFactory: KeyboardFactory
+): AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
     override fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*> {
         throw NotImplementedError("Not yet implemented")
     }
@@ -30,17 +35,21 @@ class UserInteractionProcessor:
     }
 
     private fun sendStartMessage(chatId: Long, bot: XMassTreeBot): BotApiMethod<*> {
-        return SendMessage.builder()
-            .chatId(chatId)
-            .text("Hello, I'm XMassTreeBot!")
-            .build()
+        return messageFactory.createMessage(
+            chatId,
+            "Hello, I'm XMassTreeBot!",
+            keyboardFactory.createInlineKeyboard(
+                listOf("New Tree", "Show Trees"), listOf(1, 1), listOf("new_tree", "show_trees"))
+        )
     }
 
     private fun sendUnknownCommandMessage(chatId: Long, bot: XMassTreeBot): BotApiMethod<*> {
-        return SendMessage.builder()
-            .chatId(chatId)
-            .text("Unknown command!")
-            .build()
+        return messageFactory.createMessage(
+            chatId,
+            "Unknown command!",
+            keyboardFactory.createInlineKeyboard(
+                listOf("Return"), listOf(1), listOf("return"))
+        )
     }
 
 
