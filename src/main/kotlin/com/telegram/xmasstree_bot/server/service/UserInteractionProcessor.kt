@@ -25,8 +25,8 @@ class UserInteractionProcessor(
 
     override fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*> {
         return when (message.text) {
-            "/start" -> sendStartMessage(message.chatId, bot)
-            else -> sendUnknownCommandMessage(message.chatId, bot)
+            "/start" -> sendStartMessage(message.chatId)
+            else -> sendUnknownCommandMessage(message.chatId)
         }
     }
 
@@ -34,7 +34,7 @@ class UserInteractionProcessor(
         throw NotImplementedError("Not yet implemented")
     }
 
-    private fun sendStartMessage(chatId: Long, bot: XMassTreeBot): BotApiMethod<*> {
+    private fun sendStartMessage(chatId: Long): BotApiMethod<*> {
         return messageFactory.createMessage(
             chatId,
             "Hello, I'm XMassTreeBot!",
@@ -43,7 +43,7 @@ class UserInteractionProcessor(
         )
     }
 
-    private fun sendUnknownCommandMessage(chatId: Long, bot: XMassTreeBot): BotApiMethod<*> {
+    private fun sendUnknownCommandMessage(chatId: Long): BotApiMethod<*> {
         return messageFactory.createMessage(
             chatId,
             "Unknown command!",
