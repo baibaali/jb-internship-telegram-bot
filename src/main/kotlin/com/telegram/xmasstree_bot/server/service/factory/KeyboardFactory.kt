@@ -7,8 +7,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 @Component
 class KeyboardFactory: AbstractFactory() {
-
-    private val log = LoggerFactory.getLogger(KeyboardFactory::class.java)
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.java)
+    }
 
     fun createInlineKeyboard(
         buttons: List<String>,
@@ -16,7 +17,7 @@ class KeyboardFactory: AbstractFactory() {
         callbacks: List<String>): InlineKeyboardMarkup? {
 
         if (buttons.size != callbacks.size || buttons.size != rowConfiguration.sum()) {
-            log.warn("createInlineKeyboard: Invalid parameters [buttonsName: $buttons, rowConfiguration: $rowConfiguration, buttonsCallbacks: $callbacks]")
+            logger.warn("createInlineKeyboard: Invalid parameters [buttonsName: $buttons, rowConfiguration: $rowConfiguration, buttonsCallbacks: $callbacks]")
             return null
         }
 
