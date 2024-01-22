@@ -38,6 +38,8 @@ dependencies {
 
     implementation("org.slf4j:slf4j-api")
 
+    implementation("redis.clients:jedis:5.0.2")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
