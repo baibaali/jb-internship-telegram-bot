@@ -7,6 +7,7 @@ import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Polygon
+import org.springframework.stereotype.Service
 
 
 /**
@@ -59,7 +60,6 @@ class GeoBorder {
         }
 
         val point = Coordinate(longitude, latitude)
-//        println("Point is within the polygon: ${border.contains(geometryFactory.createPoint(point))}")
         return border.contains(geometryFactory.createPoint(point))
     }
 
