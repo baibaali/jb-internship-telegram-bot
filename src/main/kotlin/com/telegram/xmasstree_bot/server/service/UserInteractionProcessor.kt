@@ -3,7 +3,7 @@ package com.telegram.xmasstree_bot.server.service
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import com.telegram.xmasstree_bot.exception.GeoBorderException
 import com.telegram.xmasstree_bot.exception.InvalidArgumentException
-import com.telegram.xmasstree_bot.geo.GeoBorder
+import com.telegram.xmasstree_bot.server.service.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.User
 import com.telegram.xmasstree_bot.server.entity.XMassTree
 import com.telegram.xmasstree_bot.server.entity.enums.UserState
@@ -31,23 +31,11 @@ class UserInteractionProcessor(
     private val redisService: RedisService
 ): AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
 
-    private var cityBorder: GeoBorder = GeoBorder()
-
-    init {
-        try {
-            cityBorder.createPolygonFromGeoJson("/static/prague.geojson")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     override fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*>? {
         val chatId = callbackQuery.message.chatId
         val messageId = callbackQuery.message.messageId
 
         val user = getUser(callbackQuery.from)
-
-        println("callbackQuery.data = ${callbackQuery.data}")
 
         if (callbackQuery.data.startsWith("previous")) {
             val page = callbackQuery.data.split(",")[1].toIntOrNull() ?: 0
@@ -94,7 +82,7 @@ class UserInteractionProcessor(
                 return messageFactory.createEditMessageText(
                     chatId,
                     messageId,
-                    "No trees found.",
+                    "There are no trees yet",
                     keyboardFactory.createInlineKeyboard(listOf("Return"), listOf(1), listOf("returnEdit"))
                 )
             }
@@ -281,18 +269,24 @@ class UserInteractionProcessor(
 
         val location = "${message.location.latitude},${message.location.longitude}"
         try {
-            if (!cityBorder.testPoints(message.location.latitude, message.location.longitude)) {
+            val userGeoBorderService = userService.getGeoBorderService(message.chatId)
+            if (!userGeoBorderService.testPoint(message.location.latitude, message.location.longitude)) {
                 changeUserState(user, UserState.MENU)
                 return sendLocationOutOfBorderMessage(message.chatId)
             }
             redisService.set(user.id.toString(), location)
-        } catch (e: InvalidArgumentException) {
-            changeUserState(user, UserState.MENU)
-            return sendLocationErrorMessage(message.chatId)
-        } catch (e: GeoBorderException) {
-            e.printStackTrace()
-            changeUserState(user, UserState.MENU)
-            return sendInternalErrorMessage(message.chatId)
+        } catch (e: Exception) {
+            return when (e) {
+                is InvalidArgumentException -> {
+                    changeUserState(user, UserState.MENU)
+                    sendLocationErrorMessage(message.chatId)
+                }
+                else -> {
+                    e.printStackTrace()
+                    changeUserState(user, UserState.MENU)
+                    sendInternalErrorMessage(message.chatId)
+                }
+            }
         }
 
         changeUserState(user, UserState.IMAGE)
@@ -397,6 +391,5 @@ class UserInteractionProcessor(
         user.state = newState
         return userService.save(user)
     }
-
 
 }
