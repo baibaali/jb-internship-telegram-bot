@@ -6,10 +6,11 @@ import com.telegram.xmasstree_bot.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.geo.GeoBorder
 import com.telegram.xmasstree_bot.server.entity.User
 import com.telegram.xmasstree_bot.server.entity.XMassTree
-import com.telegram.xmasstree_bot.server.service.common.AbstractInteractionProcessor
-import com.telegram.xmasstree_bot.server.service.common.CallbackQueryProcessor
-import com.telegram.xmasstree_bot.server.service.common.CommandProcessor
-import com.telegram.xmasstree_bot.server.service.common.MessageProcessor
+import com.telegram.xmasstree_bot.server.entity.enums.UserState
+import com.telegram.xmasstree_bot.server.service.interaction.AbstractInteractionProcessor
+import com.telegram.xmasstree_bot.server.service.interaction.CallbackQueryProcessor
+import com.telegram.xmasstree_bot.server.service.interaction.CommandProcessor
+import com.telegram.xmasstree_bot.server.service.interaction.MessageProcessor
 import com.telegram.xmasstree_bot.server.service.factory.KeyboardFactory
 import com.telegram.xmasstree_bot.server.service.factory.MessageFactory
 import org.springframework.stereotype.Service
@@ -26,8 +27,6 @@ class UserInteractionProcessor(
     private val userService: UserService
 ): AbstractInteractionProcessor(), MessageProcessor, CallbackQueryProcessor, CommandProcessor {
 
-    private var awaitingPhoto = false
-    private var awaitingLocation = false
     private var trees = listOf<XMassTree>()
     private val userProgress = mutableMapOf<Long, Int>()
     private var location = ""
@@ -47,6 +46,8 @@ class UserInteractionProcessor(
         val messageId = callbackQuery.message.messageId
         val currentProgress = userProgress.getOrDefault(chatId, 0)
 
+        val user = getUser(callbackQuery.from)
+
         val newProgress = when (callbackQuery.data) {
             "previous" -> if (currentProgress - 1 < 0) trees.size - 1 else currentProgress - 1
             "next" -> if (currentProgress + 1 == trees.size) 0 else currentProgress + 1
@@ -55,7 +56,7 @@ class UserInteractionProcessor(
 
         return when (callbackQuery.data) {
             "newTree" -> {
-                awaitingLocation = true
+                changeUserState(user, UserState.LOCATION)
                 messageFactory.createEditMessageText(
                     chatId,
                     messageId,
@@ -63,6 +64,7 @@ class UserInteractionProcessor(
                     keyboardFactory.createInlineKeyboard(listOf("Return"), listOf(1), listOf("return_edit")))
             }
             "showTrees" -> {
+                changeUserState(user, UserState.MENU)
                 userProgress[chatId] = 0
                 showTrees(chatId, messageId, bot)
             }
@@ -80,8 +82,7 @@ class UserInteractionProcessor(
                 showTrees(chatId, messageId, bot)
             }
             "return_edit" -> {
-                awaitingLocation = false
-                awaitingPhoto = false
+                changeUserState(user, UserState.MENU)
                 messageFactory.createEditMessageText(
                     chatId,
                     messageId,
@@ -92,8 +93,7 @@ class UserInteractionProcessor(
                 )
             }
             "return_send" -> {
-                awaitingLocation = false
-                awaitingPhoto = false
+                changeUserState(user, UserState.MENU)
                 sendStartMessage(chatId)
             }
             else -> {
@@ -151,6 +151,9 @@ class UserInteractionProcessor(
     }
 
     override fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
+        val user = getUser(message.from)
+        changeUserState(user, UserState.MENU)
+
         return when (message.text) {
             "/start" -> sendStartMessage(message.chatId)
             else -> sendUnknownCommandMessage(message.chatId)
@@ -158,8 +161,9 @@ class UserInteractionProcessor(
     }
 
     override fun processText(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
-        awaitingLocation = false
-        awaitingPhoto = false
+        val user = getUser(message.from)
+        changeUserState(user, UserState.MENU)
+
         return messageFactory.createSendMessage(
             message.chatId,
             "Please, select an option:",
@@ -170,9 +174,11 @@ class UserInteractionProcessor(
     }
 
     override fun processPhoto(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
-        if (!awaitingPhoto) {
-            awaitingLocation = false
-            awaitingPhoto = false
+        val user = getUser(message.from)
+
+        if (user.state != UserState.IMAGE) {
+            changeUserState(user, UserState.MENU)
+
             return messageFactory.createSendMessage(
                 message.chatId,
                 "Please, select an option:",
@@ -199,16 +205,17 @@ class UserInteractionProcessor(
             "Tree saved successfully!",
         ))
 
-        awaitingLocation = false
-        awaitingPhoto = false
+        changeUserState(user, UserState.MENU)
 
         return sendStartMessage(message.chatId)
     }
 
     override fun processLocation(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
-        if (!awaitingLocation) {
-            awaitingLocation = false
-            awaitingPhoto = false
+        val user = getUser(message.from)
+        if (user.banned) return null
+
+        if (user.state != UserState.LOCATION) {
+            changeUserState(user, UserState.MENU)
             return messageFactory.createSendMessage(
                 message.chatId,
                 "Please, select an option:",
@@ -221,6 +228,7 @@ class UserInteractionProcessor(
         location = "${message.location.latitude},${message.location.longitude}"
         try {
             if (!cityBorder.testPoints(message.location.latitude, message.location.longitude)) {
+                changeUserState(user, UserState.MENU)
                 return messageFactory.createSendMessage(
                     message.chatId,
                     "Sorry, the location must be within the Prague city.",
@@ -230,6 +238,7 @@ class UserInteractionProcessor(
                 )
             }
         } catch (e: InvalidArgumentException) {
+            changeUserState(user, UserState.MENU)
             return messageFactory.createSendMessage(
                 message.chatId,
                 "An error occurred while processing your location.\n" +
@@ -240,6 +249,7 @@ class UserInteractionProcessor(
             )
         } catch (e: GeoBorderException) {
             e.printStackTrace()
+            changeUserState(user, UserState.MENU)
             return messageFactory.createSendMessage(
                 message.chatId,
                 "An error occurred while processing your request.\n" +
@@ -250,7 +260,7 @@ class UserInteractionProcessor(
             )
         }
 
-        awaitingPhoto = true
+        changeUserState(user, UserState.IMAGE)
         return messageFactory.createSendMessage(
             message.chatId,
             "Please, send me a photo of your tree",
@@ -276,6 +286,27 @@ class UserInteractionProcessor(
             keyboardFactory.createInlineKeyboard(
                 listOf("Return"), listOf(1), listOf("return_edit"))
         )
+    }
+
+    private fun getUser(tgUser: org.telegram.telegrambots.meta.api.objects.User): User {
+        val userWrapper = userService.findById(tgUser.id)
+        if (userWrapper.isEmpty) {
+            return User(
+                id = tgUser.id,
+                username = tgUser.userName,
+                state = UserState.MENU,
+                banned = false
+            )
+        }
+
+        val user = userWrapper.get()
+        user.username = tgUser.userName
+        return userService.save(user)
+    }
+
+    private fun changeUserState(user: User, newState: UserState): User {
+        user.state = newState
+        return userService.save(user)
     }
 
 
