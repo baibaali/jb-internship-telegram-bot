@@ -9,6 +9,11 @@ import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Polygon
 
+/**
+ * AbstractGeoBorderService class.
+ * @property border Polygon representing the border of some city.
+ * @property geometryFactory GeometryFactory used to create a polygon.
+ */
 abstract class AbstractGeoBorderService: GeoBorderService {
     private lateinit var border: Polygon
     private val geometryFactory = GeometryFactory()
@@ -17,6 +22,10 @@ abstract class AbstractGeoBorderService: GeoBorderService {
         initBorder()
     }
 
+    /**
+     * Initializes the border of some city.
+     * @throws FileNotLoadedException if GeoJson data is null or cannot be read.
+     */
     private fun initBorder() {
         try {
             loadGeoJsonData()
