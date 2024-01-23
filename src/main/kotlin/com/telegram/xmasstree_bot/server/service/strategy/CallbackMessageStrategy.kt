@@ -2,6 +2,7 @@ package com.telegram.xmasstree_bot.server.service.strategy
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
 import com.telegram.xmasstree_bot.server.entity.enums.UserState
+import com.telegram.xmasstree_bot.server.service.RedisService
 import com.telegram.xmasstree_bot.server.service.UserService
 import com.telegram.xmasstree_bot.server.service.XMassTreeService
 import com.telegram.xmasstree_bot.server.service.factory.BotPredefinedMessageFactory
@@ -15,7 +16,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 class CallbackMessageStrategy(
     private val botPredefinedMessageFactory: BotPredefinedMessageFactory,
     private val userService: UserService,
-    private val xMassTreeService: XMassTreeService
+    private val xMassTreeService: XMassTreeService,
+    private val redisService: RedisService
 ): MessageStrategy {
     override fun execute(botApiObject: BotApiObject, bot: XMassTreeBot): BotApiMethod<*>? {
         val callbackQuery = botApiObject as CallbackQuery
@@ -46,8 +48,18 @@ class CallbackMessageStrategy(
 
         return when (callbackQuery.data) {
             "newTree" -> {
-                userService.updateUserState(user, UserState.LOCATION)
-                botPredefinedMessageFactory.sendWaitForLocation(chatId, messageId)
+                val currentTimeMillis = System.currentTimeMillis().toDouble()
+                val uploadsCount = redisService.zcount(
+                    "uploads:${chatId}", currentTimeMillis - 60 * 60 * 1000, currentTimeMillis
+                )
+                println("uploads:$chatId = $uploadsCount")
+                if (uploadsCount >= 5) {
+                    userService.updateUserState(user, UserState.MENU)
+                    botPredefinedMessageFactory.sendTooManyUploadsMessage(chatId, messageId)
+                } else {
+                    userService.updateUserState(user, UserState.LOCATION)
+                    botPredefinedMessageFactory.sendWaitForLocation(chatId, messageId)
+                }
             }
             "displayGalleryPage" -> {
                 userService.updateUserState(user, UserState.MENU)

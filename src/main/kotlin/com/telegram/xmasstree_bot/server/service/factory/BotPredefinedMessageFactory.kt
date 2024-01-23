@@ -27,9 +27,14 @@ class BotPredefinedMessageFactory(
         private const val START = "Hello, I'm XMassTreeBot!"
         private const val EMPTY_GALLERY = "There are no trees yet"
         private const val RETURN_TO_MENU = "Please, select an option:"
+        private const val UPLOADS_LIMIT_EXCEEDED = "You have exceeded the limit of uploads per hour.\n" +
+                "Please, try again later."
     }
 
-    
+    fun sendTooManyUploadsMessage(chatId: Long, messageId: Int): BotApiMethod<*>? {
+        return messageFactory.createEditMessageText(chatId, messageId, UPLOADS_LIMIT_EXCEEDED, createInlineKeyboardForReturnEdit())
+    }
+
     fun sendSessionExpiredMessage(chatId: Long): BotApiMethod<*>? {
         return messageFactory.createSendMessage(chatId, SESSION_EXPIRED, createInlineKeyboardForReturnEdit())
     }

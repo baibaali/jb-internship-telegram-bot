@@ -9,8 +9,20 @@ class RedisService {
 
     private val jedis: Jedis = Jedis()
 
+    fun zadd(key: String, score: Double, value: String) {
+        jedis.zadd(key, score, value)
+    }
+
+    fun zcount(key: String, min: Double, max: Double): Long {
+        return jedis.zcount(key, min, max)
+    }
+
     fun set(key: String, value: String) {
         jedis.set(key, value)
+    }
+
+    fun setExpiration(key: String, seconds: Long) {
+        jedis.expire(key, seconds)
     }
 
     fun get(key: String): String? {

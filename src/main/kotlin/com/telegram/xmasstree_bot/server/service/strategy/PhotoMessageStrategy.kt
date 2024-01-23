@@ -46,6 +46,9 @@ class PhotoMessageStrategy(
         val tree = XMassTree(location = location, imageFileId = imageFileId)
         xMassTreeService.save(tree)
 
+        val currentTimeMillis = System.currentTimeMillis().toDouble()
+        redisService.zadd("uploads:${user.id}", currentTimeMillis, currentTimeMillis.toString())
+
         bot.execute(messageFactory.createEditMessageText(message.chatId, processingMessage.messageId, "Tree saved successfully!"))
 
         userService.updateUserState(user, UserState.MENU)

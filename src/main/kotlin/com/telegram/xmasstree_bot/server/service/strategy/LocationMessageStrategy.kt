@@ -39,6 +39,7 @@ class LocationMessageStrategy(
                 return botPredefinedMessageFactory.sendLocationOutOfBorderMessage(message.chatId)
             }
             redisService.set(user.id.toString(), location)
+            redisService.setExpiration(user.id.toString(), 60 * 60)
         } catch (e: Exception) {
             return when (e) {
                 is InvalidArgumentException -> {
