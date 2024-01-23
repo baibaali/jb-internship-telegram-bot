@@ -2,8 +2,9 @@ package com.telegram.xmasstree_bot.server.service.geo
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.telegram.xmasstree_bot.exception.GeoBorderException
-import com.telegram.xmasstree_bot.exception.InvalidArgumentException
+import com.telegram.xmasstree_bot.server.exception.FileNotLoadedException
+import com.telegram.xmasstree_bot.server.exception.InvalidArgumentException
+import com.telegram.xmasstree_bot.server.exception.NotInitializedException
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Polygon
@@ -19,27 +20,27 @@ abstract class AbstractGeoBorderService: GeoBorderService {
     private fun initBorder() {
         try {
             loadGeoJsonData()
-        } catch (e: GeoBorderException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     /**
      * Loads GeoJson data.
-     * @throws GeoBorderException if GeoJson data is null or cannot be read.
+     * @throws FileNotLoadedException if GeoJson data is null or cannot be read.
      */
-    @Throws(GeoBorderException::class)
+    @Throws(FileNotLoadedException::class)
     protected abstract fun loadGeoJsonData()
 
     /**
      * Creates a polygon from GeoJson data for Prague city.
-     * @throws GeoBorderException if GeoJson data is null or cannot be read.
+     * @throws FileNotLoadedException if GeoJson data is null or cannot be read.
      */
-    @Throws(GeoBorderException::class)
+    @Throws(FileNotLoadedException::class)
     protected fun createPolygonFromGeoJson(filePath: String) {
         try {
             val geoJsonData = this::class.java.getResource(filePath)?.readText(Charsets.UTF_8)
-                ?: throw GeoBorderException("GeoJson data is null")
+                ?: throw FileNotLoadedException("GeoJson data is null")
 
             val objectMapper = ObjectMapper()
             val root = objectMapper.readTree(geoJsonData)
@@ -47,8 +48,8 @@ abstract class AbstractGeoBorderService: GeoBorderService {
             val coordinatesNode = root.path("features")[0].path("geometry").path("coordinates")
             val coordinates = extractCoordinates(coordinatesNode)
             border = createPolygon(coordinates)
-        } catch (e: GeoBorderException) {
-            throw GeoBorderException("GeoJson data is null or cannot be read")
+        } catch (e: FileNotLoadedException) {
+            throw FileNotLoadedException("GeoJson data is null or cannot be read")
         }
     }
 
@@ -86,17 +87,17 @@ abstract class AbstractGeoBorderService: GeoBorderService {
      * @param latitude Latitude of the point.
      * @param longitude Longitude of the point.
      * @throws InvalidArgumentException if latitude or longitude is not within the range.
-     * @throws GeoBorderException if polygon is not initialized.
+     * @throws NotInitializedException if polygon is not initialized.
      * @return True if the point is within the polygon, false otherwise.
      */
-    @Throws(InvalidArgumentException::class, GeoBorderException::class)
+    @Throws(InvalidArgumentException::class, NotInitializedException::class)
     override fun testPoint(latitude: Double, longitude: Double): Boolean {
         if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
             throw InvalidArgumentException("Latitude must be between -90 and 90, longitude between -180 and 180")
         }
 
         if (!this::border.isInitialized) {
-            throw GeoBorderException("Polygon is not initialized")
+            throw NotInitializedException("Polygon is not initialized")
         }
 
         val point = Coordinate(longitude, latitude)

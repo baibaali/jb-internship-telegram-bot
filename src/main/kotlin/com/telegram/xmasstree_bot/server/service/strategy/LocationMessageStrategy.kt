@@ -1,7 +1,7 @@
 package com.telegram.xmasstree_bot.server.service.strategy
 
 import com.telegram.xmasstree_bot.bot.XMassTreeBot
-import com.telegram.xmasstree_bot.exception.InvalidArgumentException
+import com.telegram.xmasstree_bot.server.exception.InvalidArgumentException
 import com.telegram.xmasstree_bot.server.entity.enums.UserState
 import com.telegram.xmasstree_bot.server.service.RedisService
 import com.telegram.xmasstree_bot.server.service.UserService

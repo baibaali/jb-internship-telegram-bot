@@ -1,13 +1,12 @@
-package com.telegram.xmasstree_bot.geo
+package com.telegram.xmasstree_bot.server.service.geo
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.telegram.xmasstree_bot.exception.GeoBorderException
-import com.telegram.xmasstree_bot.exception.InvalidArgumentException
+import com.telegram.xmasstree_bot.server.exception.FileNotLoadedException
+import com.telegram.xmasstree_bot.server.exception.InvalidArgumentException
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Polygon
-import org.springframework.stereotype.Service
 
 
 /**
@@ -20,13 +19,13 @@ class GeoBorder {
 
     /**
      * Creates a polygon from GeoJson data for Prague city.
-     * @throws GeoBorderException if GeoJson data is null or cannot be read.
+     * @throws FileNotLoadedException if GeoJson data is null or cannot be read.
      */
-    @Throws(GeoBorderException::class)
+    @Throws(FileNotLoadedException::class)
     fun createPolygonFromGeoJson(filePath: String) {
         try {
             val geoJsonData = this::class.java.getResource(filePath)?.readText(Charsets.UTF_8)
-                ?: throw GeoBorderException("GeoJson data is null")
+                ?: throw FileNotLoadedException("GeoJson data is null")
 
             val objectMapper = ObjectMapper()
             val root = objectMapper.readTree(geoJsonData)
@@ -35,8 +34,8 @@ class GeoBorder {
             val coordinates = extractCoordinates(coordinatesNode)
             border = createPolygon(coordinates)
 
-        } catch (e: GeoBorderException) {
-            throw GeoBorderException("GeoJson data is null or cannot be read")
+        } catch (e: FileNotLoadedException) {
+            throw FileNotLoadedException("GeoJson data is null or cannot be read")
         }
     }
 
@@ -45,10 +44,10 @@ class GeoBorder {
      * @param latitude Latitude of the point.
      * @param longitude Longitude of the point.
      * @throws InvalidArgumentException if latitude or longitude is not within the range.
-     * @throws GeoBorderException if polygon is not initialized.
+     * @throws FileNotLoadedException if polygon is not initialized.
      * @return True if the point is within the polygon, false otherwise.
      */
-    @Throws(InvalidArgumentException::class, GeoBorderException::class)
+    @Throws(InvalidArgumentException::class, FileNotLoadedException::class)
     fun testPoints(latitude: Double, longitude: Double): Boolean {
 
         if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0) {
@@ -56,7 +55,7 @@ class GeoBorder {
         }
 
         if (!this::border.isInitialized) {
-            throw GeoBorderException("Polygon is not initialized")
+            throw FileNotLoadedException("Polygon is not initialized")
         }
 
         val point = Coordinate(longitude, latitude)
