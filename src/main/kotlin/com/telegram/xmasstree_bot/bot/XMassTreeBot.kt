@@ -8,8 +8,9 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Update
 
 /**
- * This is the main bot class.
- * It handles all the user interactions.
+ * Telegram bot class that implements TelegramWebhookBot
+ * @param telegramBotProperties - Telegram bot properties
+ * @param updateDispatcher - Update dispatcher
  */
 @Component
 class XMassTreeBot(
