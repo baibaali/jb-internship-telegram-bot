@@ -1,8 +1,6 @@
 package com.telegram.xmasstree_bot.server.service.factory
 
 import com.telegram.xmasstree_bot.server.entity.XMassTree
-import org.antlr.v4.runtime.tree.Tree
-import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto

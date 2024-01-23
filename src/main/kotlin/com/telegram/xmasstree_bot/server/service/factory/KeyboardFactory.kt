@@ -35,17 +35,25 @@ class KeyboardFactory: AbstractFactory() {
         val keyboard = mutableListOf<List<InlineKeyboardButton>>()
         var index = 0
         for (row in rowConfiguration) {
-            val buttonsRow = mutableListOf<InlineKeyboardButton>()
-            for (i in 0 until row) {
-                val button = InlineKeyboardButton()
-                button.text = buttons[index]
-                button.callbackData = callbacks[index]
-                buttonsRow.add(button)
-                index++
-            }
-            keyboard.add(buttonsRow)
+            keyboard.add(
+                getInlineKeyboardButtonRow(buttons.subList(index, index + row), callbacks.subList(index, index + row))
+            )
+            index += row
         }
         return keyboard
     }
 
+    private fun getInlineKeyboardButtonRow(buttons: List<String>, callbacks: List<String>): List<InlineKeyboardButton> {
+        val buttonsRow = mutableListOf<InlineKeyboardButton>()
+        for (i in buttons.indices) {
+            buttonsRow.add(getInlineKeyboardButton(buttons[i], callbacks[i]))
+        }
+        return buttonsRow
+    }
+    private fun getInlineKeyboardButton(text: String, callback: String): InlineKeyboardButton {
+        val button = InlineKeyboardButton()
+        button.text = text
+        button.callbackData = callback
+        return button
+    }
 }
