@@ -19,7 +19,7 @@ class TextMessageStrategy(
         return processText(message, bot)
     }
 
-    fun processText(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
+    private fun processText(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
         userService.updateUserState(user, UserState.MENU)
         return botPredefinedMessageFactory.returnToMenuSend(message.chatId)

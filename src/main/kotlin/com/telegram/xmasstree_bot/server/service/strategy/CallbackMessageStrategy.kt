@@ -24,7 +24,7 @@ class CallbackMessageStrategy(
         return processCallbackQuery(callbackQuery, bot)
     }
 
-    fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*>? {
+    private fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*>? {
         val chatId = callbackQuery.message.chatId
         val messageId = callbackQuery.message.messageId
 

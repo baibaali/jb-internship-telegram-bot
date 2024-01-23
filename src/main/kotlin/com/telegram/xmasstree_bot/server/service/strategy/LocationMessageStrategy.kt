@@ -22,7 +22,7 @@ class LocationMessageStrategy(
         return processLocation(message, bot)
     }
 
-    fun processLocation(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
+    private fun processLocation(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
         if (user.banned) return null
 
