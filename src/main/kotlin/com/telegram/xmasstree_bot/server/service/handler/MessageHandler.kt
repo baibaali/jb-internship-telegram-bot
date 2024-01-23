@@ -11,6 +11,12 @@ import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 
+/**
+ * MessageHandler class.
+ * Used to handle messages.
+ * @property userInteractionProcessor UserInteractionProcessor used to process user interaction.
+ * @property strategyFactory StrategyFactory used to get a strategy of message processing.
+ */
 @Service
 class MessageHandler(
     private val userInteractionProcessor: UserInteractionProcessor,

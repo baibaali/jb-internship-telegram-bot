@@ -11,6 +11,12 @@ import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 
+/**
+ * CallbackQueryHandler class.
+ * Used to handle callback queries.
+ * @property userInteractionProcessor UserInteractionProcessor used to process user interaction.
+ * @property strategyFactory StrategyFactory used to get a strategy of message processing.
+ */
 @Service
 class CallbackQueryHandler(
     private val userInteractionProcessor: UserInteractionProcessor,
