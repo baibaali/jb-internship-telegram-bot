@@ -4,6 +4,7 @@ import com.telegram.xmasstree_bot.server.service.geo.AbstractGeoBorderService
 import com.telegram.xmasstree_bot.server.service.geo.PragueGeoBorderService
 import com.telegram.xmasstree_bot.server.entity.User
 import com.telegram.xmasstree_bot.server.entity.enums.City
+import com.telegram.xmasstree_bot.server.entity.enums.UserState
 import com.telegram.xmasstree_bot.server.repository.UserRepository
 import com.telegram.xmasstree_bot.server.service.common.AbstractEntityService
 import org.springframework.data.jpa.repository.JpaRepository
@@ -21,11 +22,31 @@ class UserService(
             throw RuntimeException("User with id $userId not found")
         }
 
-        println("User city: ${user.get().city}")
         return when (user.get().city) {
             City.PRAGUE -> pragueGeoBorderService
             else -> pragueGeoBorderService
         }
+    }
+
+    fun getOrCreateUser(tgUser: org.telegram.telegrambots.meta.api.objects.User): User {
+        val userWrapper = findById(tgUser.id)
+        if (userWrapper.isEmpty) {
+            return User(
+                id = tgUser.id,
+                username = tgUser.userName,
+                state = UserState.MENU,
+                banned = false
+            )
+        }
+
+        val user = userWrapper.get()
+        user.username = tgUser.userName
+        return save(user)
+    }
+
+    fun updateUserState(user: User, newState: UserState): User {
+        user.state = newState
+        return save(user)
     }
 
 }
