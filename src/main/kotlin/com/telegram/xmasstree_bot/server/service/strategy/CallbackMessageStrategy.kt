@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
-import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 
 @Service
@@ -48,7 +47,7 @@ class CallbackMessageStrategy(
         return when (callbackQuery.data) {
             "newTree" -> {
                 userService.updateUserState(user, UserState.LOCATION)
-                botPredefinedMessageFactory.waitForLocation(chatId, messageId)
+                botPredefinedMessageFactory.sendWaitForLocation(chatId, messageId)
             }
             "displayGalleryPage" -> {
                 userService.updateUserState(user, UserState.MENU)
@@ -111,7 +110,9 @@ class CallbackMessageStrategy(
         if (tree.isEmpty) {
             return botPredefinedMessageFactory.sendOutdatedDataMessage(chatId)
         }
-        return botPredefinedMessageFactory.sendLocationMessage(chatId, tree.get(), page)
+        val latitude = tree.get().location.split(",")[0].toDouble()
+        val longitude = tree.get().location.split(",")[1].toDouble()
+        return botPredefinedMessageFactory.sendLocationMessage(chatId, latitude, longitude, page, treeId)
     }
 
     private fun backToImage(chatId: Long, bot: XMassTreeBot, page: Int, treeId: Long): BotApiMethod<*>? {

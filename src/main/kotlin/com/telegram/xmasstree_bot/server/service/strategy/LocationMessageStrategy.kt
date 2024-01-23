@@ -54,7 +54,7 @@ class LocationMessageStrategy(
         }
 
         userService.updateUserState(user, UserState.IMAGE)
-        return botPredefinedMessageFactory.waitForImage(message.chatId)
+        return botPredefinedMessageFactory.sendWaitForImage(message.chatId)
     }
 
 }
