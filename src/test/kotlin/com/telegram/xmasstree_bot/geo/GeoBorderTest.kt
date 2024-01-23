@@ -1,8 +1,8 @@
 package com.telegram.xmasstree_bot.geo
 
-import com.telegram.xmasstree_bot.exception.GeoBorderException
-import com.telegram.xmasstree_bot.exception.InvalidArgumentException
-import com.telegram.xmasstree_bot.geo.GeoBorder
+import com.telegram.xmasstree_bot.server.exception.FileNotLoadedException
+import com.telegram.xmasstree_bot.server.exception.InvalidArgumentException
+import com.telegram.xmasstree_bot.server.service.geo.GeoBorder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -17,7 +17,7 @@ class GeoBorderTest {
     @Test
     fun createPolygonFromGeoJsonWithInvalidFilePath() {
         val geoBorder = GeoBorder()
-        assertThrows<GeoBorderException>{geoBorder.createPolygonFromGeoJson("/static/invalid.geojson")}
+        assertThrows<FileNotLoadedException>{geoBorder.createPolygonFromGeoJson("/static/invalid.geojson")}
     }
 
     @Test

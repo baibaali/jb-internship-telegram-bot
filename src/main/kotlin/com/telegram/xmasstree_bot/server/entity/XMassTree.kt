@@ -1,26 +1,24 @@
 package com.telegram.xmasstree_bot.server.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.Table
 
 /**
  * XMassTree entity class.
  */
 @Entity
+@Table(name = "trees")
 data class XMassTree(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long,
     /**
      * Location of the tree in the next format: "latitude,longitude".
      */
-    val location: String,
+    @Column(name = "location", nullable = false)
+    var location: String = "",
     /**
      * The telegram fileId property of the image.
      */
-    val imageUrl: String) {
-    constructor() : this(0, "", "")
-}
+    @Column(name = "image_file_id", nullable = false)
+    var imageFileId: String = ""
+): AbstractEntity()
 

@@ -34,6 +34,12 @@ dependencies {
 
     implementation("org.locationtech.jts:jts-core:1.19.0")
 
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    implementation("org.slf4j:slf4j-api")
+
+    implementation("redis.clients:jedis:5.0.2")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
