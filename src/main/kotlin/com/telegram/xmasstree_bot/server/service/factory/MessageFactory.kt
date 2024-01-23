@@ -12,9 +12,19 @@ import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 
+/**
+ * MessageFactory class. Used to create messages.
+ */
 @Component
 class MessageFactory: AbstractFactory() {
 
+    /**
+     * Creates SendMessage object with a given configuration.
+     * @param chatId Chat id.
+     * @param text Message text.
+     * @param replyMarkup Reply keyboard.
+     * @return SendMessage object.
+     */
     fun createSendMessage(chatId: Long, text: String, replyMarkup: ReplyKeyboard? = null): SendMessage {
         return SendMessage.builder()
             .chatId(chatId.toString())
@@ -23,6 +33,14 @@ class MessageFactory: AbstractFactory() {
             .build()
     }
 
+    /**
+     * Creates SendLocation object with a given configuration.
+     * @param chatId Chat id.
+     * @param latitude Latitude.
+     * @param longitude Longitude.
+     * @param replyMarkup Reply keyboard.
+     * @return SendLocation object.
+     */
     fun createSendLocation(chatId: Long, latitude: Double, longitude: Double, replyMarkup: ReplyKeyboard?): SendLocation {
         return SendLocation.builder()
             .chatId(chatId.toString())
@@ -32,6 +50,13 @@ class MessageFactory: AbstractFactory() {
             .build()
     }
 
+    /**
+     * Creates SendPhoto object with a given configuration.
+     * @param chatId Chat id.
+     * @param imageFileId Image file id in Telegram.
+     * @param replyMarkup Reply keyboard.
+     * @return SendPhoto object.
+     */
     fun createSendPhoto(chatId: Long, imageFileId: String, replyMarkup: ReplyKeyboard? = null): SendPhoto {
         return SendPhoto.builder()
             .chatId(chatId.toString())
@@ -40,6 +65,14 @@ class MessageFactory: AbstractFactory() {
             .build()
     }
 
+    /**
+     * Creates EditMessageText object with a given configuration.
+     * @param chatId Chat id.
+     * @param messageId Message id to edit.
+     * @param text Message text.
+     * @param replyMarkup Reply keyboard.
+     * @return EditMessageText object.
+     */
     fun createEditMessageText(chatId: Long, messageId: Int, text: String, replyMarkup: InlineKeyboardMarkup? = null): EditMessageText {
         return EditMessageText.builder()
             .chatId(chatId.toString())
@@ -49,6 +82,14 @@ class MessageFactory: AbstractFactory() {
             .build()
     }
 
+    /**
+     * Creates EditMessageMedia object with a given configuration.
+     * @param chatId Chat id.
+     * @param messageId Message id to edit.
+     * @param imageFileId Image file id in Telegram.
+     * @param replyMarkup Reply keyboard.
+     * @return EditMessageMedia object.
+     */
     fun createEditMessageMedia(chatId: Long, messageId: Int, imageFileId: String, replyMarkup: InlineKeyboardMarkup? = null): EditMessageMedia {
         return EditMessageMedia.builder()
             .chatId(chatId.toString())
