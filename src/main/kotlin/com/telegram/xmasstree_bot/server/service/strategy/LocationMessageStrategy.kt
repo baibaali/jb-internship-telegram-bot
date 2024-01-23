@@ -35,25 +35,25 @@ class LocationMessageStrategy(
         try {
             val userGeoBorderService = userService.getGeoBorderService(message.chatId)
             if (!userGeoBorderService.testPoint(message.location.latitude, message.location.longitude)) {
-                userService.updateUserState((user, UserState.MENU)
+                userService.updateUserState(user, UserState.MENU)
                 return botPredefinedMessageFactory.sendLocationOutOfBorderMessage(message.chatId)
             }
             redisService.set(user.id.toString(), location)
         } catch (e: Exception) {
             return when (e) {
                 is InvalidArgumentException -> {
-                    userService.updateUserState((user, UserState.MENU)
+                    userService.updateUserState(user, UserState.MENU)
                     botPredefinedMessageFactory.sendLocationErrorMessage(message.chatId)
                 }
                 else -> {
                     e.printStackTrace()
-                    userService.updateUserState((user, UserState.MENU)
+                    userService.updateUserState(user, UserState.MENU)
                     botPredefinedMessageFactory.sendInternalErrorMessage(message.chatId)
                 }
             }
         }
 
-        userService.updateUserState((user, UserState.IMAGE)
+        userService.updateUserState(user, UserState.IMAGE)
         return botPredefinedMessageFactory.waitForImage(message.chatId)
     }
 
