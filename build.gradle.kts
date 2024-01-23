@@ -41,6 +41,7 @@ dependencies {
     implementation("redis.clients:jedis:5.0.2")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.h2database:h2")
 }
 
 tasks.withType<KotlinCompile> {

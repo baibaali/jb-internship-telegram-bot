@@ -27,7 +27,7 @@ class PhotoMessageStrategy(
         return processPhoto(message, bot)
     }
 
-    fun processPhoto(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
+    private fun processPhoto(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
 
         if (user.state != UserState.IMAGE) {

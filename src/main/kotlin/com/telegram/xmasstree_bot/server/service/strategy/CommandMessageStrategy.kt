@@ -19,7 +19,7 @@ class CommandMessageStrategy(
         return processCommand(message, bot)
     }
 
-    fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
+    private fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
         userService.updateUserState(user, UserState.MENU)
 

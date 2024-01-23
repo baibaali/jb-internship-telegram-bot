@@ -31,12 +31,12 @@ class UserService(
     fun getOrCreateUser(tgUser: org.telegram.telegrambots.meta.api.objects.User): User {
         val userWrapper = findById(tgUser.id)
         if (userWrapper.isEmpty) {
-            return User(
+            return save(User(
                 id = tgUser.id,
                 username = tgUser.userName,
                 state = UserState.MENU,
                 banned = false
-            )
+            ))
         }
 
         val user = userWrapper.get()
@@ -45,8 +45,12 @@ class UserService(
     }
 
     fun updateUserState(user: User, newState: UserState): User {
-        user.state = newState
-        return save(user)
+        val dbUser = findById(user.id)
+        if (dbUser.isEmpty) {
+            throw RuntimeException("User with id ${user.id} not found")
+        }
+        dbUser.get().state = newState
+        return save(dbUser.get())
     }
 
 }
