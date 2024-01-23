@@ -3,6 +3,12 @@ package com.telegram.xmasstree_bot.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 
+/**
+ * Telegram bot properties
+ * @param botToken - bot token
+ * @param botName - bot name
+ * @param webHookUrl - bot webhook url
+ */
 @ConfigurationProperties(prefix = "telegram")
 data class TelegramBotProperties @ConstructorBinding constructor(
     private val botToken: String,
