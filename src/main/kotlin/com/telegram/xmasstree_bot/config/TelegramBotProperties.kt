@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 
 /**
- * Telegram bot properties
+ * Telegram bot properties. Injects from application.properties
  * @param botToken - bot token
  * @param botName - bot name
  * @param webHookUrl - bot webhook url
