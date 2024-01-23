@@ -4,6 +4,9 @@ import com.telegram.xmasstree_bot.server.entity.enums.City
 import com.telegram.xmasstree_bot.server.entity.enums.UserState
 import jakarta.persistence.*
 
+/**
+ * User entity class.
+ */
 @Entity
 @Table(name = "users")
 data class User(
