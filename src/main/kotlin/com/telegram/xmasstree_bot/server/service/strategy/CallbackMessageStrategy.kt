@@ -12,6 +12,11 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 
+/**
+ * CallbackMessageStrategy class. Implements MessageStrategy interface.
+ * This class is responsible for processing callback queries.
+ * @see MessageStrategy
+ */
 @Service
 class CallbackMessageStrategy(
     private val botPredefinedMessageFactory: BotPredefinedMessageFactory,
@@ -24,12 +29,22 @@ class CallbackMessageStrategy(
         return processCallbackQuery(callbackQuery, bot)
     }
 
+    /**
+     * Processes callback query.
+     * @param callbackQuery CallbackQuery object.
+     * @param bot XMassTreeBot object.
+     * @return BotApiMethod object.
+     */
     private fun processCallbackQuery(callbackQuery: CallbackQuery, bot: XMassTreeBot): BotApiMethod<*>? {
         val chatId = callbackQuery.message.chatId
         val messageId = callbackQuery.message.messageId
 
         val user = userService.getOrCreateUser(callbackQuery.from)
+        /* If user is banned, we should ignore all his requests */
+        if (user.banned)
+            return null
 
+        /* Process callbacks from gallery */
         if (callbackQuery.data.startsWith("previous")) {
             val page = callbackQuery.data.split(",")[1].toIntOrNull() ?: 0
             return displayGalleryPage(chatId, bot, page, messageId)
@@ -46,13 +61,16 @@ class CallbackMessageStrategy(
             return backToImage(chatId, bot, page, treeId)
         }
 
+        /* Process callbacks from menu */
         return when (callbackQuery.data) {
             "newTree" -> {
+                /* Count the number of uploads in the last hour */
                 val currentTimeMillis = System.currentTimeMillis().toDouble()
                 val uploadsCount = redisService.zcount(
                     "uploads:${chatId}", currentTimeMillis - 60 * 60 * 1000, currentTimeMillis
                 )
                 println("uploads:$chatId = $uploadsCount")
+                /* If user uploaded more than 5 trees in the last hour, send him a message that he should wait */
                 if (uploadsCount >= 5) {
                     userService.updateUserState(user, UserState.MENU)
                     botPredefinedMessageFactory.sendTooManyUploadsMessage(chatId, messageId)
@@ -77,20 +95,36 @@ class CallbackMessageStrategy(
         }
     }
 
+    /**
+     * Sends the message that starts the gallery.
+     * @param chatId Chat id.
+     * @param bot XMassTreeBot object.
+     * @param messageId Message id.
+     * @return BotApiMethod object.
+     */
     private fun openImageGallery(chatId: Long, bot: XMassTreeBot, messageId: Int): BotApiMethod<*>? {
         try{
             val treeWrapper = xMassTreeService.findAll(0, 1)
 
+            /* If calling from main menu, then we should send a new message */
             if (treeWrapper.isEmpty) {
                 return botPredefinedMessageFactory.sendEmptyGalleryMessage(chatId, messageId)
             }
 
+            /* If calling from gallery, then we should edit the message */
             return displayGalleryPage(chatId, bot, 0, null)
         } catch (e: IndexOutOfBoundsException) {
             return botPredefinedMessageFactory.sendOutdatedDataMessage(chatId)
         }
     }
 
+    /**
+     * Updates the message with the tree to the next/previous page.
+     * @param chatId Chat id.
+     * @param bot XMassTreeBot object.
+     * @param page Page number.
+     * @param messageId Message id. If null, then we should send a new message.
+     */
     private fun displayGalleryPage(chatId: Long, bot: XMassTreeBot, page: Int, messageId: Int? = null): BotApiMethod<*>? {
         try {
             val treeWrapper = xMassTreeService.findAll(page, 1)
@@ -117,6 +151,12 @@ class CallbackMessageStrategy(
         }
     }
 
+    /**
+     * Sends the message with the location of the tree.
+     * @param chatId Chat id.
+     * @param page Page number.
+     * @param treeId Tree id.
+     */
     private fun showLocation(chatId: Long, page: Int, treeId: Long): BotApiMethod<*>? {
         val tree = xMassTreeService.findById(treeId)
         if (tree.isEmpty) {
@@ -127,6 +167,9 @@ class CallbackMessageStrategy(
         return botPredefinedMessageFactory.sendLocationMessage(chatId, latitude, longitude, page, treeId)
     }
 
+    /**
+     * Sends the message with the image of the tree (Returns from location to the gallery).
+     */
     private fun backToImage(chatId: Long, bot: XMassTreeBot, page: Int, treeId: Long): BotApiMethod<*>? {
         try{
             val treeByPageNumber = xMassTreeService.findAll(page, 1)

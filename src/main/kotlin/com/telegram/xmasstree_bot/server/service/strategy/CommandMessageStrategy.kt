@@ -9,6 +9,11 @@ import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 
+/**
+ * CommandMessageStrategy class. Implements MessageStrategy interface.
+ * This class is responsible for processing command messages.
+ * @see MessageStrategy
+ */
 @Service
 class CommandMessageStrategy(
     private val userService: UserService,
@@ -19,6 +24,12 @@ class CommandMessageStrategy(
         return processCommand(message, bot)
     }
 
+    /**
+     * Sends a message to the user depending on the command.
+     * @param message message from user.
+     * @param bot bot instance.
+     * @return BotApiMethod object.
+     */
     private fun processCommand(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
         userService.updateUserState(user, UserState.MENU)

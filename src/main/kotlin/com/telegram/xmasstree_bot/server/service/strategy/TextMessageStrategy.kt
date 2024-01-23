@@ -9,6 +9,11 @@ import org.telegram.telegrambots.meta.api.interfaces.BotApiObject
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 
+/**
+ * TextMessageStrategy class. Implements MessageStrategy interface.
+ * This class is responsible for processing text messages (simple text messages).
+ * @see MessageStrategy
+ */
 @Service
 class TextMessageStrategy(
     private val userService: UserService,
@@ -19,6 +24,13 @@ class TextMessageStrategy(
         return processText(message, bot)
     }
 
+    /**
+     * At the moment, this method only returns the user to the menu.
+     * Bot do not support text messages.
+     * @param message - message from user.
+     * @param bot - bot instance.
+     * @return BotApiMethod object.
+     */
     private fun processText(message: Message, bot: XMassTreeBot): BotApiMethod<*>? {
         val user = userService.getOrCreateUser(message.from)
         userService.updateUserState(user, UserState.MENU)
